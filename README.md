@@ -55,19 +55,26 @@ From the repository root, run:
 
 You should see output similar to the following:
 ```
-Executed lambda_handler in module example
+Executed example.example_handler
 Estimated...
 ...execution clock time:		 0.192309 seconds
-...execution user mode time:	 0.074047 seconds
 ...execution peak RSS memory:	 368M (386195456 bytes)
 ----------------------RESULT----------------------
+value1
+```
+
+Note that without the `-v` switch, the function return is printed to `stdout`
+with no modification or other information.
+
+```
+$ ./emulambda.py example.example_handler example/example.json
 value1
 ```
 
 #### What's happening?
 
 In this example, `emulambda` is:
-  1. Loading the `lambda_handler` function from the `example` module
+  1. Loading the `example_handler` function from the `example` module
   1. Deserializing `stdin` (which is the contents of `example/example.json`) as the `event` argument for the function.
   1. Invoking the function, timing and measuring memory consumption.
   1. Reporting on resource usage.
@@ -76,14 +83,14 @@ In this example, `emulambda` is:
 ### Event Stream Mode
 
 From the repository root, run:
-`./emulambda.py example.example.example_handler - -s -v -t 2 < example/ex-stream.ldjson`
+`./emulambda.py example.example_handler - -s -v -t 2 < example/ex-stream.ldjson`
 
 You should see output similar to the following:
 ```
 Entering stream mode.
 
 Object 1 { "key1": "value1", "key2": "value2", "key3": "value3" }
-Executed example.example.example_handler
+Executed example.example_handler
 Estimated...
 ...execution clock time:		 196ms
 ...execution peak RSS memory:		 368M (385933312 bytes)
@@ -101,7 +108,7 @@ Traceback (most recent call last):
 .
 .
 Object 18 { "key1": "value1b", "key2": "value2b", "key3": "value3b" }
-Executed example.example.example_handler
+Executed example.example_handler
 Estimated...
 ...execution clock time:		 190ms
 ...execution peak RSS memory:		 396M (416256000 bytes)
@@ -121,7 +128,7 @@ Peak resident set size (memory):
 #### What's happening?
 
 In this example, `emulambda` is:
-  1. Loading the `lambda_handler` function from the `example` module
+  1. Loading the `example_handler` function from the `example` module
   1. Streaming Line-Delimited JSON (LDJSON) lines from `stdin` (which is the
   contents of `example/ex-stream.ldjson`) as `event` arguments.
   1. Once per `event` object, invoking the function, reporting on resource usage, and printing the function
