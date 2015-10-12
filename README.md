@@ -59,8 +59,8 @@ value1
 #### What's happening?
 
 In this example, `emulambda` is:
-  1) Loading the `lambda_handler` function from the `example` module
-  1) Deserializing `example/example.json` as the `event` argument for the function.
-  1) Invoking the function, timing and measuring memory consumption.
-  1) Reporting on resource usage.
-  1) Printing the function result.
+  1. Loading the `lambda_handler` function from the `example` module
+  1. Deserializing `example/example.json` as the `event` argument for the function.
+  1. Invoking the function, timing and measuring memory consumption.
+  1. Reporting on resource usage.
+  1. Printing the function result.
