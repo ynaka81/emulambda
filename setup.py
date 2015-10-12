@@ -10,5 +10,6 @@ setup(
     author_email='dom@fugue.co',
     description='Python emulator for AWS Lambda.',
     install_requires=[
+        'hurry.filesize'
       ]
 )

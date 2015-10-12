@@ -3,10 +3,10 @@ from __future__ import print_function
 import argparse
 from importlib import import_module
 import json
-import time
-import sys
-import resource
 import math
+import resource
+import sys
+import time
 
 from hurry.filesize import size
 
@@ -39,6 +39,8 @@ def parseargs():
     parser.add_argument('lambdapath',
                         help='An import path to your function, as you would give it to AWS: `module.function`.')
     parser.add_argument('eventfile', help='A JSON file to give as the `event` argument to the function.')
+    parser.add_argument('-s', '--stream', help='Treat `eventfile` as a Line-Delimited JSON stream.',
+                        action='store_true') #TODO -- investigate if this can be auto-detected
     parser.add_argument('--timeout', help='Execution timeout in seconds. Default is 300, the AWS maximum.', type=int,
                         default=300)
     parser.add_argument('-v', '--verbose', help='Verbose mode. Provides exact function run, timing, etc.',
@@ -63,9 +65,12 @@ def import_lambda(path):
 
 def parse_event(eventfile):
     try:
-        # TODO -- Logic to handle (-) stdin
-        with open(eventfile, 'r') as event_file:
-            return json.load(event_file)
+        if eventfile is '-':
+            with sys.stdin as event_file:
+                return json.load(event_file)
+        else:
+            with open(eventfile, 'r') as event_file:
+                return json.load(event_file)
     except IOError as e:
         e.message = "File not found / readable!"
         event_fail(e, eventfile)
