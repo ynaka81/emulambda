@@ -217,7 +217,7 @@ def render_summary(stats):
     if -1 in stats['clock']:
         print('(ERRORS DETECTED: Removing timing samples from aborted invocations.)')
         stats['clock'] = [x for x in stats['clock'] if x > 0]
-
+        print('New sample size: %i' % len(stats['clock']))
     print('Clock time:\n'
           '\tMin: %ims, Max: %ims, Median: %ims, Rounded Standard Deviation: %sms' % (
               min(stats['clock']),
