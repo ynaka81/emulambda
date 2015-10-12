@@ -6,6 +6,7 @@ import json
 import time
 import sys
 import resource
+import math
 
 from hurry.filesize import size
 
@@ -31,8 +32,10 @@ Planned features:
 
 
 def parseargs():
-    parser = argparse.ArgumentParser(description='Python AWS Lambda Emulator. At present, AWS Lambda supports Python 2.7 only.')
-    parser.add_argument('lambdapath', help='An import path to your function, as you would give it to AWS: `module.function`.')
+    parser = argparse.ArgumentParser(
+        description='Python AWS Lambda Emulator. At present, AWS Lambda supports Python 2.7 only.')
+    parser.add_argument('lambdapath',
+                        help='An import path to your function, as you would give it to AWS: `module.function`.')
     parser.add_argument('eventfile', help='A JSON file to give as the `event` argument to the function.')
     parser.add_argument('--timeout', help='Execution timeout in seconds. Default is 300, the AWS maximum.', type=int,
                         default=300)
@@ -85,12 +88,15 @@ def invoke_lambda(lfunc, event, context, t):
         sys.exit(1)
 
 
-def render_result(args, result, exec_clock, exec_utime, exec_rss):
+def render_result(args, result, exec_clock, exec_rss):
     if args.verbose:
         print("Executed %s" % args.lambdapath)
         print("Estimated...")
-        print("...execution clock time:\t\t %f seconds" % exec_clock)
-        print("...execution user mode time:\t %f seconds" % exec_utime)
+        print("...execution clock time:\t\t %f seconds (%i ms) (%i ms bucket)" % (
+            exec_clock,
+            (exec_clock * 1000),
+            int(math.ceil((exec_clock * 1000) / 100.0)) * 100
+        ))
         print("...execution peak RSS memory:\t %s (%i bytes)" % (size(exec_rss), exec_rss))
         print("----------------------RESULT----------------------")
     print(str(result))
@@ -101,7 +107,6 @@ def main():
 
     # Get process peak RSS memory before execution
     pre_rss = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
-    pre_utime = resource.getrusage(resource.RUSAGE_SELF).ru_utime
 
     # Import the lambda
     lfunc = import_lambda(args.lambdapath)
@@ -115,10 +120,9 @@ def main():
     # Get process peak RSS memory after execution
     # TODO: Research accuracy, improve or document disclaimers. Note, other methods tried include guppy and psutil.
     exec_rss = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss - pre_rss
-    exec_utime = resource.getrusage(resource.RUSAGE_SELF).ru_utime - pre_utime
 
     # Render the result
-    render_result(args, result, exec_clock, exec_utime, exec_rss)
+    render_result(args, result, exec_clock, exec_rss)
 
 
 if __name__ == '__main__':
