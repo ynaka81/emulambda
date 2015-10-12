@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 from __future__ import print_function
 import argparse
+import gc
 from importlib import import_module
 import json
 import math
@@ -26,7 +27,7 @@ Planned features:
   - Take event via stdin
   - LDJSON
   - Multiple runs / test battery profile
-  - SQS
+  - SQS (use AWS CLI?)
   - Kinesis
   - AWS Event lib
   - Contexts?
@@ -63,19 +64,41 @@ def import_lambda(path):
         import_fail(e)
 
 
-def parse_event(eventfile):
+def read_file_to_string(filename):
     try:
-        if eventfile is '-':
-            with sys.stdin as event_file:
-                return json.load(event_file)
-        else:
-            with open(eventfile, 'r') as event_file:
-                return json.load(event_file)
+        with sys.stdin if filename is '-' else open(filename, 'r') as event_file:
+            return event_file.read()
     except IOError as e:
         e.message = "File not found / readable!"
-        event_fail(e, eventfile)
+        event_fail(e)
+
+
+def emit_to_function(stream, func):
+    '''
+    :param stream: A file-like object providing a LDJSON stream.
+    :param func: A function to invoke with objects from the stream.
+    :return: Void.
+    '''
+    print("Entering stream mode.")
+    i = 1
+    try:
+        with sys.stdin if stream is '-' else open(stream, 'r') as event_stream:
+            for line in event_stream:
+                gc.collect()  # force GC between each run to get quality memory usage sample
+                print("\nObject %i %s" % (i, line.rstrip()[:65] + ('...' if len(line) > 65 else '')))
+                i += 1
+                func(json.loads(line))
     except ValueError as e:
-        event_fail(e, eventfile)
+        event_fail(e)
+    except IOError as e:
+        event_fail(e)
+
+
+def parse_event(eventstring):
+    try:
+        return json.loads(eventstring)
+    except ValueError as e:
+        event_fail(e)
 
 
 def invoke_lambda(lfunc, event, context, t):
@@ -104,7 +127,7 @@ def render_result(args, result, exec_clock, exec_rss):
             (exec_clock * 1000),
             int(math.ceil((exec_clock * 1000) / 100.0)) * 100
         ))
-        print("...execution peak RSS memory:\t %s (%i bytes)" % (size(exec_rss), exec_rss))
+        print("...execution peak RSS memory:\t\t %s (%i bytes)" % (size(exec_rss), exec_rss))
         print("----------------------RESULT----------------------")
     print(str(result))
 
@@ -118,18 +141,23 @@ def main():
     # Import the lambda
     lfunc = import_lambda(args.lambdapath)
 
-    # Deserialize the event JSON
-    event = parse_event(args.eventfile)
+    def execute(event):
+        # Invoke the lambda
+        result, exec_clock = invoke_lambda(lfunc, event, None, args.timeout)
 
-    # Invoke the lambda
-    result, exec_clock = invoke_lambda(lfunc, event, None, args.timeout)
+        # Get process peak RSS memory after execution
+        exec_rss = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss - pre_rss
 
-    # Get process peak RSS memory after execution
-    # TODO: Research accuracy, improve or document disclaimers. Note, other methods tried include guppy and psutil.
-    exec_rss = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss - pre_rss
+        # Render the result
+        render_result(args, result, exec_clock, exec_rss)
 
-    # Render the result
-    render_result(args, result, exec_clock, exec_rss)
+    if args.stream:
+        # Enter stream mode
+        emit_to_function(args.eventfile, execute)
+    else:
+        # Deserialize single event JSON
+        event = read_file_to_string(args.eventfile)
+        execute(parse_event(event))
 
 
 if __name__ == '__main__':
