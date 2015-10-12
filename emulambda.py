@@ -24,6 +24,8 @@ Features:
   - Estimate time and memory usage in verbose mode
 Planned features:
   - Take event via stdin
+  - LDJSON
+  - Multiple runs / test battery profile
   - SQS
   - Kinesis
   - AWS Event lib

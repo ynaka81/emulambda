@@ -64,3 +64,20 @@ In this example, `emulambda` is:
   1. Invoking the function, timing and measuring memory consumption.
   1. Reporting on resource usage.
   1. Printing the function result.
+
+## How Profiling Works
+
+The profiling in `emulambda` is meant to help with billing estimation more than
+anything else. Since we can only guess at some AWS Lambda internals, we've run
+some experiments against the service to partially reverse-engineer the metrics it
+uses for billing. Therefore:
+  * Clock time is as close as possible to function execution. It does not include
+  time spent loading the module(s), though that is a penalty you would pay the
+  first time you execute the lambda in AWS.
+  * System-reported peak RSS (resident set size) is used for memory estimation.
+  This represents real memory use, not the use of virtual memory.
+
+The authors of this project make no guarantees whatsoever that the profiling
+information given by `emulambda` is accurate. It may not correlate with what AWS bills.
+Many variables, including the resources allocated to the function runtime by AWS,
+may have an impact on the real billed amount.
