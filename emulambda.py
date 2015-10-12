@@ -39,7 +39,8 @@ def main():
         :return: Void.
         """
         # Invoke the lambda
-        result, exec_clock = invoke_lambda(lfunc, _event, None, args.timeout)  # TODO consider refactoring to pass stats through function
+        # TODO consider refactoring to pass stats through function
+        result, exec_clock = invoke_lambda(lfunc, _event, None, args.timeout)
 
         # Get process peak RSS memory after execution
         exec_rss = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss - pre_rss
@@ -71,9 +72,10 @@ def parseargs():
     parser.add_argument('lambdapath',
                         help='An import path to your function, as you would give it to AWS: `module.function`.')
     parser.add_argument('eventfile', help='A JSON file to give as the `event` argument to the function.')
+    # TODO -- investigate if stream can be auto-detected
     parser.add_argument('-s', '--stream', help='Treat `eventfile` as a Line-Delimited JSON stream.',
-                        action='store_true')  # TODO -- investigate if this can be auto-detected
-    parser.add_argument('--timeout', help='Execution timeout in seconds. Default is 300, the AWS maximum.', type=int,
+                        action='store_true')
+    parser.add_argument('-t', '--timeout', help='Execution timeout in seconds. Default is 300, the AWS maximum.', type=int,
                         default=300)
     parser.add_argument('-v', '--verbose', help='Verbose mode. Provides exact function run, timing, etc.',
                         action='store_true')
@@ -142,7 +144,8 @@ def invoke_lambda(lfunc, event, context, t):
     """
     @timeout(t)
     def _invoke_lambda(l, e, c):
-        s = time.time()  # TODO investigate suitability of timeit here
+        # TODO investigate suitability of timeit here
+        s = time.time()
         r = l(e, c)
         x = (time.time() - s) * 1000  # convert to ms
         return r, x
@@ -151,7 +154,7 @@ def invoke_lambda(lfunc, event, context, t):
         return _invoke_lambda(lfunc, event, context)
     except TimeoutError:
         print("Your lambda timed out! (Timeout was %is)\n" % t)
-        return None  # TODO this used to be sys.exit(1). Revise this mechanic now that there is a batch mode.
+        return "EMULAMBDA: TIMEOUT ERROR", -1
     except BaseException:
         # While this is normally a too-broad exception, since we cannot know the lambda's errors ahead of time, this is appropriate here.
         print("\nThere was an error running your function. Ensure it has a signature like `def lambda_handler (event, context)`.\n")
@@ -195,14 +198,11 @@ def render_result(verbose, lambdapath, result, exec_clock, exec_rss):
     :return: Void.
     """
     if verbose:
-        print("Executed %s" % lambdapath)
-        print("Estimated...")
-        print("...execution clock time:\t\t %ims (%ims bucket)" % (
-            exec_clock,
-            int(math.ceil(exec_clock / 100.0)) * 100
-        ))
-        print("...execution peak RSS memory:\t\t %s (%i bytes)" % (size(exec_rss), exec_rss))
-        print("----------------------RESULT----------------------")
+        print('Executed %s' % lambdapath)
+        print('Estimated...')
+        print('...execution clock time:\t\t %ims' % exec_clock)
+        print('...execution peak RSS memory:\t\t %s (%i bytes)' % (size(exec_rss), exec_rss))
+        print('----------------------RESULT----------------------')
     print(str(result))
 
 
@@ -217,13 +217,14 @@ def render_summary(stats):
     if -1 in stats['clock']:
         print('(ERRORS DETECTED: Removing timing samples from aborted invocations.)')
         stats['clock'] = [x for x in stats['clock'] if x > 0]
+
     print('Clock time:\n'
           '\tMin: %ims, Max: %ims, Median: %ims, Rounded Standard Deviation: %sms' % (
               min(stats['clock']),
               max(stats['clock']),
               sorted(stats['clock'])[math.trunc(len(stats['clock']) / 2)],
               math.trunc(math.ceil(numpy.std(stats['clock'], ddof=1)))
-          ))
+          )) if len(stats['clock']) > 0 else print("No valid timing samples!")
     print('Peak resident set size (memory):\n'
           '\tMin: %s, Max: %s' % (
               size(min(stats['rss'])),
