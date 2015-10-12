@@ -9,18 +9,19 @@ reduces development cost and time.
 ## Features
 Present:
   - Run an AWS-compatible lambda function
-  - Take event from file
+  - Take event from file or stdin
+    - Also accepts LDJSON stream of events (manually switched)
   - Set timeout up to 300s
   - Send lambda result to stdout
   - Estimate time and memory usage in verbose mode
+    - Also produces summary report & statistics when given a stream.
+
 
 Planned:
-  - Take event via stdin
-  - Support deployment package format
-  - SQS
+  - SQS (although directing AWS CLI to stdin might be easier)
   - Kinesis
-  - AWS Event lib
-  - Contexts?
+  - AWS event library, for common integrations
+  - Context support
 
 ## Usage
 
