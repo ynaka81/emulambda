@@ -51,7 +51,7 @@ optional arguments:
 ### Single-Event Mode
 
 From the repository root, run:
-`./emulambda.py example - -v < example/example.json`
+`./emulambda.py example.example_handler - -v < example/example.json`
 
 You should see output similar to the following:
 ```
