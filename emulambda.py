@@ -188,6 +188,15 @@ def emit_to_function(verbose, stream, func):
         raise e
 
 
+def billing_bucket(t):
+    """
+    Returns billing bucket for AWS Lambda.
+    :param t: An elapsed time in ms.
+    :return: Nearest 100ms, rounding up, as int.
+    """
+    return int(math.ceil(t / 100.0)) * 100
+
+
 def render_result(verbose, lambdapath, result, exec_clock, exec_rss):
     """
     Render the result of a lambda execution, with profiling info if verbose.
@@ -200,7 +209,7 @@ def render_result(verbose, lambdapath, result, exec_clock, exec_rss):
     if verbose:
         print('Executed %s' % lambdapath)
         print('Estimated...')
-        print('...execution clock time:\t\t %ims' % exec_clock)
+        print('...execution clock time:\t\t %ims (%ims billing bucket)' % (exec_clock, billing_bucket(exec_clock)))
         print('...execution peak RSS memory:\t\t %s (%i bytes)' % (size(exec_rss), exec_rss))
         print('----------------------RESULT----------------------')
     print(str(result))
@@ -218,11 +227,13 @@ def render_summary(stats):
         print('(ERRORS DETECTED: Removing timing samples from aborted invocations.)')
         stats['clock'] = [x for x in stats['clock'] if x > 0]
         print('New sample size: %i' % len(stats['clock']))
+    median = sorted(stats['clock'])[math.trunc(len(stats['clock']) / 2)]
     print('Clock time:\n'
-          '\tMin: %ims, Max: %ims, Median: %ims, Rounded Standard Deviation: %sms' % (
+          '\tMin: %ims, Max: %ims, Median: %ims, Median Billing Bucket: %ims, Rounded Standard Deviation: %sms' % (
               min(stats['clock']),
               max(stats['clock']),
-              sorted(stats['clock'])[math.trunc(len(stats['clock']) / 2)],
+              median,
+              billing_bucket(median),
               math.trunc(math.ceil(numpy.std(stats['clock'], ddof=1)))
           )) if len(stats['clock']) > 0 else print("No valid timing samples!")
     print('Peak resident set size (memory):\n'
