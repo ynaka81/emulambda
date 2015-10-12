@@ -9,6 +9,6 @@ def very_inefficient(recursion, accumulator):
         return accumulator
 
 
-def lambda_handler(event, context):
+def example_handler(event, context):
     result = very_inefficient(512, '')
     return event['key1']#echo first key value

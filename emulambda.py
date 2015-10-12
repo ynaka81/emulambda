@@ -23,7 +23,6 @@ Features:
   - Estimate time and memory usage in verbose mode
 Planned features:
   - Take event via stdin
-  - Support deployment package format
   - SQS
   - Kinesis
   - AWS Event lib
@@ -32,8 +31,8 @@ Planned features:
 
 
 def parseargs():
-    parser = argparse.ArgumentParser(description='Python AWS Lambda Emulator.')
-    parser.add_argument('lambdamod', help='A Python 2.7 module name (not file name!) containing your lambda_handler function.')
+    parser = argparse.ArgumentParser(description='Python AWS Lambda Emulator. At present, AWS Lambda supports Python 2.7 only.')
+    parser.add_argument('lambdapath', help='An import path to your function, as you would give it to AWS: `module.function`.')
     parser.add_argument('eventfile', help='A JSON file to give as the `event` argument to the function.')
     parser.add_argument('--timeout', help='Execution timeout in seconds. Default is 300, the AWS maximum.', type=int,
                         default=300)
@@ -42,9 +41,17 @@ def parseargs():
     return parser.parse_args()
 
 
-def import_lambda(module):
+def import_lambda(path):
     try:
-        return import_module(module).lambda_handler #TODO: tweak to take module.handler
+        # Parse path into module and function name.
+        path = str(path)
+        spath = path.split('.')
+        module = '.'.join(spath[:-1])
+        function = spath[-1]
+        # Import the module and get the function.
+        import_module(module)
+        return getattr(sys.modules[module], function)
+
     except (AttributeError, TypeError) as e:
         import_fail(e)
 
@@ -80,7 +87,7 @@ def invoke_lambda(lfunc, event, context, t):
 
 def render_result(args, result, exec_clock, exec_utime, exec_rss):
     if args.verbose:
-        print("Executed lambda_handler in module %s" % args.lambdamod)
+        print("Executed %s" % args.lambdapath)
         print("Estimated...")
         print("...execution clock time:\t\t %f seconds" % exec_clock)
         print("...execution user mode time:\t %f seconds" % exec_utime)
@@ -97,7 +104,7 @@ def main():
     pre_utime = resource.getrusage(resource.RUSAGE_SELF).ru_utime
 
     # Import the lambda
-    lfunc = import_lambda(args.lambdamod)
+    lfunc = import_lambda(args.lambdapath)
 
     # Deserialize the event JSON
     event = parse_event(args.eventfile)
