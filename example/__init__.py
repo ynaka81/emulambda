@@ -1,4 +1,3 @@
-__author__ = 'dominiczippilli'
 from __future__ import print_function
 
 def very_inefficient(recursion, accumulator):
