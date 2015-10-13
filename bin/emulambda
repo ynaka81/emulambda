@@ -6,6 +6,7 @@ from importlib import import_module
 import json
 import math
 import numpy
+import os
 import resource
 import sys
 import time
@@ -13,13 +14,14 @@ import traceback
 
 from hurry.filesize import size
 
-from timeout import timeout, TimeoutError
+from emulambda.timeout import timeout, TimeoutError
 
 __author__ = 'dominiczippilli'
 __description__ = 'A local emulator for AWS Lambda for Python.'
 
 
 def main():
+    sys.path.append(os.getcwd())
     args = parseargs()
 
     # Get process peak RSS memory before execution
@@ -228,6 +230,7 @@ def render_summary(stats):
         stats['clock'] = [x for x in stats['clock'] if x > 0]
         print('New sample size: %i' % len(stats['clock']))
     median = sorted(stats['clock'])[math.trunc(len(stats['clock']) / 2)]
+    print(stats['clock'])
     print('Clock time:\n'
           '\tMin: %ims, Max: %ims, Median: %ims, Median Billing Bucket: %ims, Rounded Standard Deviation: %sms' % (
               min(stats['clock']),

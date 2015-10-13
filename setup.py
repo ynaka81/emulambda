@@ -3,7 +3,8 @@ from distutils.core import setup
 setup(
     name='emulambda',
     version='0.0',
-    packages=[''],
+    packages=['emulambda'],
+    scripts=['bin/emulambda'],
     url='http://www.fugue.co',
     license='Apache 2.0',
     author='dominiczippilli',
