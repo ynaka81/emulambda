@@ -2,9 +2,19 @@
 Copyright Fugue, Inc. 2015
 
 ## Recommended Uses
-Use `emulambda` to emulate the AWS Lambda API locally. The utility will help you to
-debug and profile your lambda functions. This shortens your feedback loop and
-reduces development cost and time.
+Use `emulambda` to emulate the AWS Lambda API locally. It provides a Python "harness" that you can use to wrap your
+function and run/analyze it.
+
+  - Development
+    - Run your lambda functions instantly locally, without packaging and sending to AWS.
+    - Shorten your feedback loop on lambda executions.
+    - Easily attach debuggers to your lambda.
+    - Run your lambda for free.
+  - Testing
+    - Easily integrate with test tools using a simple CLI and various input methods.
+    - Use stream mode to test many cases or run fuzz tests
+    - Use profiling information to identify expensive/problematic lambdas early.
+
 
 ## Features
 Present:
