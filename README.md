@@ -1,7 +1,7 @@
 # emulambda
 Copyright Fugue, Inc. 2015
 
-_EMU_-lator for _LAMBDA_.
+**EMULA**tes AWS La**MBDA**
 
 ## Recommended Uses
 Use `emulambda` to emulate the AWS Lambda API locally. It provides a Python "harness" that you can use to wrap your
