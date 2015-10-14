@@ -77,7 +77,8 @@ def parseargs():
     # TODO -- investigate if stream can be auto-detected
     parser.add_argument('-s', '--stream', help='Treat `eventfile` as a Line-Delimited JSON stream.',
                         action='store_true')
-    parser.add_argument('-t', '--timeout', help='Execution timeout in seconds. Default is 300, the AWS maximum.', type=int,
+    parser.add_argument('-t', '--timeout', help='Execution timeout in seconds. Default is 300, the AWS maximum.',
+                        type=int,
                         default=300)
     parser.add_argument('-v', '--verbose', help='Verbose mode. Provides exact function run, timing, etc.',
                         action='store_true')
@@ -93,6 +94,8 @@ def import_lambda(path):
     try:
         # Parse path into module and function name.
         path = str(path)
+        if '/' in path or '\\' in path:
+            raise ValueError()
         spath = path.split('.')
         module = '.'.join(spath[:-1])
         function = spath[-1]
@@ -101,8 +104,12 @@ def import_lambda(path):
         return getattr(sys.modules[module], function)
     except (AttributeError, TypeError) as e:
         print("\nOops! There was a problem finding your function.\n")
-        print(e.message)
         raise e
+    except ValueError:
+        print("It looks like you've given a Python *file* path as the lambdapath argument. This must be "
+              "an *import* path, following the form of [module 1].[module 2...n].[function]" + '\n' +
+              "Perhaps it is something like `" + '.'.join(path.split('/')[-1:]) + "`?")
+        sys.exit(1)
 
 
 def read_file_to_string(filename):
@@ -144,6 +151,7 @@ def invoke_lambda(lfunc, event, context, t):
     :param t: Timeout. If this function does not complete in this time, execution will fail.
     :return: Function result (type dependent on function implementation), execution time as int.
     """
+
     @timeout(t)
     def _invoke_lambda(l, e, c):
         # TODO investigate suitability of timeit here
@@ -159,7 +167,8 @@ def invoke_lambda(lfunc, event, context, t):
         return "EMULAMBDA: TIMEOUT ERROR", -1
     except BaseException:
         # While this is normally a too-broad exception, since we cannot know the lambda's errors ahead of time, this is appropriate here.
-        print("\nThere was an error running your function. Ensure it has a signature like `def lambda_handler (event, context)`.\n")
+        print(
+            "\nThere was an error running your function. Ensure it has a signature like `def lambda_handler (event, context)`.\n")
         traceback.print_exc()
         return "EMULAMBDA: LAMBDA ERROR", -1
 
@@ -177,7 +186,8 @@ def emit_to_function(verbose, stream, func):
         with sys.stdin if stream is '-' else open(stream, 'r') as event_stream:
             for line in event_stream:
                 gc.collect()  # force GC between each run to get quality memory usage sample
-                print("\nObject %i %s" % (i, line.rstrip()[:65] + ('...' if len(line) > 65 else ''))) if verbose else None
+                print(
+                    "\nObject %i %s" % (i, line.rstrip()[:65] + ('...' if len(line) > 65 else ''))) if verbose else None
                 i += 1
                 func(json.loads(line))
     except ValueError as e:
