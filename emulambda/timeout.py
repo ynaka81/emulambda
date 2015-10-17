@@ -2,7 +2,6 @@ from functools import wraps
 import errno
 import os
 import signal
-from sys import maxint
 
 
 class TimeoutError(Exception):

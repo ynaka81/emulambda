@@ -13,6 +13,7 @@ setup(
     install_requires=[
         'hurry.filesize',
         'numpy',
-        'boto3'
+        'boto3',
+        'nose'
       ]
 )
