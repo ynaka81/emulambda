@@ -1,8 +1,27 @@
 import unittest
 import sys
 import emulambda
+import emulambda.render
 import io
 __author__ = 'dominiczippilli'
+
+
+class EmulambdaMainTest(unittest.TestCase):
+    def test_main_single_event(self):
+        sys.argv = [sys.argv[0], 'example.example_handler', 'example/example.json']
+        try:
+            emulambda.main()
+            assert True
+        except BaseException as e:
+            self.fail("Main method failed.\n%s" % e.message)
+
+    def test_main_stream(self):
+        sys.argv = [sys.argv[0], 'example.example_handler', 'example/ex-stream.ldjson', '-s']
+        try:
+            emulambda.main()
+            assert True
+        except BaseException as e:
+            self.fail("Main method failed.\n%s" % e.message)
 
 
 class EmulambdaParseArgsTest(unittest.TestCase):
@@ -27,12 +46,19 @@ class EmulambdaParseArgsTest(unittest.TestCase):
 class EmulambdaImportLambdaTest(unittest.TestCase):
     def test_import_lambda_file(self):
         try:
-            func = emulambda.import_lambda('/foo/bar')
+            emulambda.import_lambda('/foo/bar')
             self.fail("Somehow, we imported a file.")
         except:
             assert True
 
-    def test_import_lambda_proper(self):
+    def test_import_lambda_missing(self):
+        try:
+            emulambda.import_lambda('testmodule.bar')
+            self.fail("Didn't detect invalid function.")
+        except:
+            assert True
+
+    def test_import_lambda(self):
         try:
             func = emulambda.import_lambda('testmodule.foo')
             assert func
@@ -98,8 +124,8 @@ class EmulambdaEmitToFunctionTest(unittest.TestCase):
 class EmulambdaBillingBucketTest(unittest.TestCase):
     def test_billing_bucket(self):
         try:
-            assert emulambda.billing_bucket(199) == 200
-            assert emulambda.billing_bucket(101) == 200
-            assert emulambda.billing_bucket(99) == 100
+            assert emulambda.render.billing_bucket(199) == 200
+            assert emulambda.render.billing_bucket(101) == 200
+            assert emulambda.render.billing_bucket(99) == 100
         except BaseException as e:
             self.fail("Billing bucket is wrong.\n%s" % e.message)
