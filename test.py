@@ -2,9 +2,6 @@ import unittest
 import sys
 import emulambda
 import io
-import time
-
-from emulambda.timeout import timeout, TimeoutError
 __author__ = 'dominiczippilli'
 
 
