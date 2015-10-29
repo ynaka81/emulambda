@@ -185,7 +185,7 @@ def emit_to_function(verbose, stream, func):
                 print(
                     "\nObject %i %s" % (i, line.rstrip()[:65] + ('...' if len(line) > 65 else ''))) if verbose else None
                 i += 1
-                print(str(func(json.loads(line), None)))
+                func(json.loads(line), None)
     except ValueError as e:
         print("There was a problem parsing your JSON event.")
         print(e.message)
