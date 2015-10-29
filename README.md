@@ -11,10 +11,10 @@ function and run/analyze it.
     - Run your lambda functions instantly locally, without packaging and sending to AWS.
     - Shorten your feedback loop on lambda executions.
     - Easily attach debuggers to your lambda.
-    - Run your lambda for free.
+    - Run your lambda locally.
   - Testing
     - Easily integrate with test tools using a simple CLI and various input methods.
-    - Use stream mode to test many cases or run fuzz tests
+    - Use stream mode to test many cases or run fuzz tests.
     - Use profiling information to identify expensive/problematic lambdas early.
 
 
@@ -34,6 +34,11 @@ Planned:
   - Kinesis
   - AWS event library, for common integrations
   - Context support
+
+## Installation
+1. `git clone` [the Emulambda repo] (https://github.com/fugue/emulambda/)
+2. Install it with `pip install -e emulambda` (You might need to sudo this command if you're using your system Python instead of a virtualenv or similar.)
+
 
 ## Usage
 
@@ -86,9 +91,9 @@ value1
 #### What's happening?
 
 In this example, `emulambda` is:
-  1. Loading the `example_handler` function from the `example` module
+  1. Loading the `example_handler` function from the `example` module.
   1. Deserializing `stdin` (which is the contents of `example/example.json`) as the `event` argument for the function.
-  1. Invoking the function, timing and measuring memory consumption.
+  1. Invoking the function, timing, and measuring memory consumption.
   1. Reporting on resource usage.
   1. Printing the function result.
 
@@ -140,7 +145,7 @@ Peak resident set size (memory):
 #### What's happening?
 
 In this example, `emulambda` is:
-  1. Loading the `example_handler` function from the `example` module
+  1. Loading the `example_handler` function from the `example` module.
   1. Streaming Line-Delimited JSON (LDJSON) lines from `stdin` (which is the
   contents of `example/ex-stream.ldjson`) as `event` arguments.
   1. Once per `event` object, invoking the function, reporting on resource usage, and printing the function
