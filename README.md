@@ -1,5 +1,4 @@
 # emulambda
-Copyright Fugue, Inc. 2015
 
 **EMULA**tes AWS La**MBDA**
 
