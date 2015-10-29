@@ -43,7 +43,7 @@ Planned:
 ## Usage
 
 ```
-usage: emulambda.py [-h] [-s] [-t TIMEOUT] [-v] lambdapath eventfile
+usage: emulambda [-h] [-s] [-t TIMEOUT] [-v] lambdapath eventfile
 
 Python AWS Lambda Emulator. At present, AWS Lambda supports Python 2.7 only.
 
@@ -68,7 +68,7 @@ optional arguments:
 ### Single-Event Mode
 
 From the repository root, run:
-`./emulambda.py example.example_handler - -v < example/example.json`
+`emulambda example.example_handler - -v < example/example.json`
 
 You should see output similar to the following:
 ```
@@ -84,7 +84,7 @@ Note that without the `-v` switch, the function return is printed to `stdout`
 with no modification or other information.
 
 ```
-$ ./emulambda.py example.example_handler example/example.json
+$ emulambda example.example_handler example/example.json
 value1
 ```
 
@@ -100,7 +100,7 @@ In this example, `emulambda` is:
 ### Event Stream Mode
 
 From the repository root, run:
-`./emulambda.py example.example_handler - -s -v -t 2 < example/ex-stream.ldjson`
+`emulambda example.example_handler - -s -v -t 2 < example/ex-stream.ldjson`
 
 You should see output similar to the following:
 ```
