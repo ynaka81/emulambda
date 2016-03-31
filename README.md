@@ -54,6 +54,9 @@ positional arguments:
 
 optional arguments:
   -h, --help            show this help message and exit
+  -r ROLE, --role ROLE  ARN of the role to execute your Lambda function (your
+                        user must have AssumeRole priviledge and your user ARN
+                        must be in Lambda's execution role TrustedPolicy).
   -s, --stream          Treat `eventfile` as a Line-Delimited JSON stream.
   -t TIMEOUT, --timeout TIMEOUT
                         Execution timeout in seconds. Default is 300, the AWS
@@ -159,6 +162,93 @@ Any third party library your Lambda function is using must be packaged and shipp
 To install a third party library, just type : ``pip install -t ./lib <libary name>``
 
 Notice that the AWS Python SDK (aka boto) is provided by default by the AWS runtime and should not be included into your project.
+
+### Using a Lambda Execution Role
+
+At the time you create a Lambda function, you specify an IAM role that AWS Lambda can assume to execute your Lambda function on your behalf. This role is also referred to as the execution role. If your Lambda function accesses other AWS resources during execution (for example, to create an object in an Amazon S3 bucket, to read an item from a DynamoDB table, or to write logs to CloudWatch Logs), you need to grant the execution role permissions for the specific actions that you want to perform using your Lambda function.
+
+To simulate this behavior, you can pass your a Lambda Execution Role to ``emulambda`` using ``-r`` command line parameter, just like this
+
+```
+./emulambda -v lambda_function.lambda_handler ./test/lambda-event.json -r arn:aws:iam::012345678912:role/lambda_basic_execution
+```
+
+(be sure to replace the AWS Account ID and role name in the example above)
+
+To use Lambda's Execution Role with ``emulambda``, you will need to setup the following :
+- a default IAM user that has permission to assume the Lambda Execution Role
+- the default IAM user's Access Key and Secret Key
+- a Lambda Execution Role referencing your default IAM user in its TrustedPolicy.
+
+The following section provides you with more detailed instructions to create these.
+
+#### Create an IAM User
+
+The default IAM user will be used by ``emulambda`` to Assume the Lambda Execution Role
+- Go to the IAM Console and create a user for ``emulambda``.
+- Collect the user's Access Key and Secret Key in ``~/.aws/credentials`` file
+- Assign the AssumeRole permission to the user.
+
+A sample IAM User credentials file looks like this :
+```
+$ cat ~/.aws/credentials
+[default]
+aws_access_key_id=AK...EA
+aws_secret_access_key=7t...6O
+```
+A sample User Permission policy looks like (see ``example/UserPolicy.json`` file):
+```
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "Stmt123",
+            "Effect": "Allow",
+            "Action": [
+                "sts:AssumeRole"
+            ],
+            "Resource": [
+                "arn:aws:iam::<YOUR ACCOUNT>:role/<YOUR LAMBDA EXECUTION ROLE NAME>"
+            ]
+        }
+    ]
+}
+```
+
+#### Lambda Execution Role
+
+The Lambda Execution Role is the one assumed by the Lambda container at runtime to acquire privileges to access other AWS resources.  
+
+The **Policies** part of that role can contain any policies required by your lambda function code to access other AWS resources.
+
+The **TrustedPolicies** part of that role must authorise your IAM user (created above) and the Lambda Service itself to assume the role.
+
+A sample TrustedPolicy looks like (see ``example/TrustedPolicy.json`` file):
+
+```
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "lambdaservice",
+      "Effect": "Allow",
+      "Principal": {
+        "Service": "lambda.amazonaws.com"
+      },
+      "Action": "sts:AssumeRole"
+    },
+    {
+      "Sid": "emulambda",
+      "Effect": "Allow",
+      "Principal": {
+        "AWS": "arn:aws:iam::<YOUR ACCOUNT ID>:user/<YOUR IAM USER>"
+      },
+      "Action": "sts:AssumeRole"
+    }
+  ]
+}
+```
+
 
 ## How Profiling Works
 
