@@ -25,6 +25,7 @@ Present:
   - Send lambda result to stdout
   - Estimate time and memory usage in verbose mode
     - Also produces summary report and statistics when given a stream
+  - picks up any library present in ``./lib`` directory
 
 
 Planned:
@@ -148,6 +149,16 @@ In this example, `emulambda` is:
   1. Once per `event` object, invoking the function, reporting on resource usage, and printing the function result.
   1. At `event` number 2, there is an intentional error. Note that `emulambda` reports the error and recovers.
   1. After running each event through the lambda, reporting aggregate timing and memory information.
+
+### Third-Party Libraries
+
+Any third party library your Lambda function is using must be packaged and shipped to AWS Lambda.
+
+`emulambda` will automatically pickup these libaries when installed in ``./lib`` directory of your project.
+
+To install a third party library, just type : ``pip install -t ./lib <libary name>``
+
+Notice that the AWS Python SDK (aka boto) is provided by default by the AWS runtime and should not be included into your project.
 
 ## How Profiling Works
 
