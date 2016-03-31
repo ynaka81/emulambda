@@ -18,6 +18,7 @@ __description__ = 'A local emulator for AWS Lambda for Python.'
 
 def main():
     sys.path.append(os.getcwd())
+    sys.path.append("./lib")
     args = parseargs()
 
     # Get process peak RSS memory before execution
@@ -194,7 +195,3 @@ def emit_to_function(verbose, stream, func):
         print("There was a problem parsing your JSON event.")
         print(e.message)
         raise e
-
-
-
-
