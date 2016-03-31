@@ -25,6 +25,7 @@ Present:
   - Send lambda result to stdout
   - Estimate time and memory usage in verbose mode
     - Also produces summary report and statistics when given a stream
+  - execute your lambda function under a user-supplied IAM Role (Lambda Execution Role)
   - picks up any library present in ``./lib`` directory
 
 
