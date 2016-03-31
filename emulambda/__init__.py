@@ -8,6 +8,7 @@ import resource
 import sys
 import time
 import traceback
+import boto3
 
 from emulambda.timeout import timeout, TimeoutError
 from emulambda.render import render_result, render_summary
@@ -18,6 +19,7 @@ __description__ = 'A local emulator for AWS Lambda for Python.'
 
 def main():
     sys.path.append(os.getcwd())
+    sys.path.append("./lib")
     args = parseargs()
 
     # Get process peak RSS memory before execution
@@ -38,7 +40,7 @@ def main():
         """
         # Invoke the lambda
         # TODO consider refactoring to pass stats through function
-        result, exec_clock = invoke_lambda(lfunc, _event, _context, args.timeout)
+        result, exec_clock = invoke_lambda(lfunc, _event, _context, args.timeout, args.role)
 
         # Get process peak RSS memory after execution
         exec_rss = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss - pre_rss
@@ -73,6 +75,8 @@ def parseargs():
     # TODO -- investigate if stream can be auto-detected
     parser.add_argument('-s', '--stream', help='Treat `eventfile` as a Line-Delimited JSON stream.',
                         action='store_true')
+    parser.add_argument('-r', '--role', help='ARN of the role to execute your Lambda function (your user must have AssumeRole priviledge and your user ARN must be in Lambda\'s execution role TrustedPolicy).',
+                        type=str)
     parser.add_argument('-t', '--timeout', help='Execution timeout in seconds. Default is 300, the AWS maximum.',
                         type=int,
                         default=300)
@@ -137,14 +141,29 @@ def parse_event(eventstring):
         print(e.message)
         raise e
 
+def create_boto3_default_session(roleARN):
+    """
+    Invoke STS to Assume the given role and create a default boto3 session
+    :param roleARN: The IAM rolename to assume.  TrustedPolicy must include the following principals
+                    ["lambda.amazonaws.com", "arn:aws:iam:<YOUR ACCOUNT ID>::user/<YOUR USER>"]
+    """
+    print("Going to assume role %s" % roleARN)
+    stsClient = boto3.client("sts")
+    creds = stsClient.assume_role(RoleArn=roleARN,RoleSessionName='emulambda',)
+    print("Setting up the default session")
+    boto3.setup_default_session(aws_access_key_id=creds['Credentials']['AccessKeyId'],
+                                aws_secret_access_key=creds['Credentials']['SecretAccessKey'],
+                                aws_session_token=creds['Credentials']['SessionToken'])
 
-def invoke_lambda(lfunc, event, context, t):
+
+def invoke_lambda(lfunc, event, context, t, roleARN):
     """
     Invoke an AWS Lambda-compatible function.
     :param lfunc: The lambda compatible function (def f(event, context))
     :param event: An event object (really, an arbitrary dictionary)
     :param context: A context object
     :param t: Timeout. If this function does not complete in this time, execution will fail.
+    :param roleRN: the ARN to Lambda's function execution role.  Your IAM user must be in the role's TrustedPolicy
     :return: Function result (type dependent on function implementation), execution time as int.
     """
 
@@ -157,6 +176,9 @@ def invoke_lambda(lfunc, event, context, t):
         return r, x
 
     try:
+        if roleARN:
+            create_boto3_default_session(roleARN)
+
         return _invoke_lambda(lfunc, event, context)
     except TimeoutError:
         print("Your lambda timed out! (Timeout was %is)\n" % t)
@@ -194,7 +216,3 @@ def emit_to_function(verbose, stream, func):
         print("There was a problem parsing your JSON event.")
         print(e.message)
         raise e
-
-
-
-
