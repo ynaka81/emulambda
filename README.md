@@ -27,13 +27,13 @@ Present:
     - Also produces summary report and statistics when given a stream
   - execute your lambda function under a user-supplied IAM Role (Lambda Execution Role)
   - picks up any library present in ``./lib`` directory
+  - Take context from file
 
 
 Planned:
   - SQS support (though for now, you can easily pipe AWS CLI output to Emulambda stdin)
   - Kinesis support / emulation
   - An AWS event library, for common integrations with other services
-  - Context support (probably an optional argument to provide context objects in the same way as event objects)
 
 ## Installation
 1. `git clone` [the Emulambda repo](https://github.com/fugue/emulambda/)
@@ -43,7 +43,7 @@ Planned:
 ## Usage
 
 ```
-usage: emulambda [-h] [-s] [-t TIMEOUT] [-v] lambdapath eventfile
+usage: emulambda [-h] [-s] [-t TIMEOUT] [-v] lambdapath eventfile contextfile
 
 Python AWS Lambda Emulator. At present, AWS Lambda supports Python 2.7 only.
 
@@ -64,6 +64,7 @@ optional arguments:
                         maximum.
   -v, --verbose         Verbose mode. Provides exact function run, timing,
                         etc.
+  contextfile           A JSON file to give as the `context` argument to the function
 ```
 
 ## Quick Start
@@ -98,6 +99,42 @@ In this example, `emulambda` is:
   1. Invoking the function, and measuring elapsed time and memory consumption.
   1. Reporting on resource usage.
   1. Printing the function result.
+
+### Single-Event Mode with Context
+
+From the repository root, run:
+`emulambda example.example_handler example/example.json example/context.json -v `
+
+You should see output similar to the following:
+```
+Function name is:  example
+Executed example.example_handler
+Estimated...
+...execution clock time:     212ms (300ms billing bucket)
+...execution peak RSS memory:    368M (385900544 bytes)
+----------------------RESULT----------------------
+value1
+```
+
+Note that without the `-v` switch, the function return is printed to `stdout` with no modification or other information.
+
+```
+$ emulambda example.example_handler example/example.json example/context.json
+Function name is:  example
+value1
+```
+
+#### What's happening?
+
+In this example, `emulambda` is:
+  1. Loading the `example_handler` function from the `example` module.
+  1. Deserializing `stdin` (which is the contents of `example/example.json`) as the `event` argument for the function.
+  1. Deserializing `stdin` (which is the contents of `example/context.json`) as the `context` argument for the function.
+  1. Invoking the function, and measuring elapsed time and memory consumption.
+  1. Reporting on resource usage.
+  1. Printing the function result.
+
+====
 
 ### Event Stream Mode
 
