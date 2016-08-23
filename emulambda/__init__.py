@@ -4,11 +4,19 @@ import gc
 from importlib import import_module
 import json
 import os
-import resource
 import sys
 import time
 import traceback
 import boto3
+
+
+USING_WINDOWS=False
+# Windows does not have a resource module
+if sys.platform!= 'win32':
+    import resource
+else:
+    USING_WINDOWS=True
+    import psutil
 
 from emulambda.timeout import timeout, TimeoutError
 from emulambda.render import render_result, render_summary
@@ -23,7 +31,7 @@ def main():
     args = parseargs()
 
     # Get process peak RSS memory before execution
-    pre_rss = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+    pre_rss = get_memory_usage()
 
     # Import the lambda
     lfunc = import_lambda(args.lambdapath)
@@ -43,7 +51,7 @@ def main():
         result, exec_clock = invoke_lambda(lfunc, _event, _context, args.timeout, args.role)
 
         # Get process peak RSS memory after execution
-        exec_rss = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss - pre_rss
+        exec_rss = get_memory_usage() - pre_rss
 
         # Store statistics
         stats['clock'].append(exec_clock)
@@ -216,3 +224,14 @@ def emit_to_function(verbose, stream, func):
         print("There was a problem parsing your JSON event.")
         print(e.message)
         raise e
+
+
+def get_memory_usage():
+    """Cross platform method to get processor info"""
+    if not USING_WINDOWS:
+        #Some have said that this returns numbers in kb on some systems vs bytes on others.
+        return resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+    else:
+        # Suggested from this thread: http://stackoverflow.com/questions/9850995/tracking-maximum-memory-usage-by-a-python-function
+        #this returns in bytes
+        return psutil.Process(os.getpid()).memory_info_ex().peak_wset
