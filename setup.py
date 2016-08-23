@@ -1,8 +1,10 @@
 from distutils.core import setup
+import platform
+
 
 setup(
     name='emulambda',
-    version='0.0',
+    version='0.1',
     packages=['emulambda'],
     scripts=['bin/emulambda'],
     url='http://www.fugue.co',
@@ -14,6 +16,9 @@ setup(
         'hurry.filesize',
         'numpy',
         'boto3',
-        'nose'
-      ]
+        'nose',
+        'psutil' #not strictly required by linux, but I couldn't figure out how to have per-platform builds easily
+      ],
+
+
 )
