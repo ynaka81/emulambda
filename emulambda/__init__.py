@@ -56,6 +56,10 @@ def main():
         # Enter stream mode
         emit_to_function(args.verbose, args.eventfile, execute)
         render_summary(stats) if args.verbose else None
+    elif args.contextfile:
+        context = read_file_to_object(args.contextfile)
+        event = read_file_to_string(args.eventfile)
+        execute(parse_event(event), context)
     else:
         # Single event mode
         event = read_file_to_string(args.eventfile)
@@ -72,6 +76,8 @@ def parseargs():
     parser.add_argument('lambdapath',
                         help='An import path to your function, as you would give it to AWS: `module.function`.')
     parser.add_argument('eventfile', help='A JSON file to give as the `event` argument to the function.')
+    parser.add_argument('contextfile', help='A JSON file to give as the `context` argument to the function.',
+                        nargs='?')
     # TODO -- investigate if stream can be auto-detected
     parser.add_argument('-s', '--stream', help='Treat `eventfile` as a Line-Delimited JSON stream.',
                         action='store_true')
@@ -110,6 +116,21 @@ def import_lambda(path):
               "an *import* path, following the form of [module 1].[module 2...n].[function]" + '\n' +
               "Perhaps it is something like `" + '.'.join(path.split('/')[-1:]) + "`?")
         sys.exit(1)
+
+def read_file_to_object(filename):
+    """
+    Deserialize JSON into Python Object to be compliant with Lambda Context Object.
+    More info: http://docs.aws.amazon.com/lambda/latest/dg/python-context-object.html
+    :param filename: A valid path to a file
+    :return: Object.
+    """
+
+    class JSON2Object(object):
+        def __init__(self, jsonfile):
+            self.__dict__ = parse_event(jsonfile)
+
+    jsonfile = read_file_to_string(filename)
+    return JSON2Object(jsonfile)
 
 
 def read_file_to_string(filename):
