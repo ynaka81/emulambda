@@ -102,7 +102,7 @@ class EmulambdaInvokeLambdaTest(unittest.TestCase):
                 return "foo"
             event = {"foo": "bar"}
             context = {"baz": "qux"}
-            emulambda.invoke_lambda(test_func, event, context, 300)
+            emulambda.invoke_lambda(test_func, event, context, 300, None)
             assert True
         except BaseException as e:
             self.fail("Failed to invoke lambda.\n%s" % e.message)
