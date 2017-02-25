@@ -8,6 +8,7 @@ import sys
 import time
 import traceback
 import boto3
+import logging
 
 
 USING_WINDOWS=False
@@ -60,18 +61,24 @@ def main():
         # Render the result
         render_result(args.verbose, args.lambdapath, result, exec_clock, exec_rss)
 
+
+    # Process context. This is optional, so we initialize the value to None.
+    context = None
+    if args.contextfile:
+        context = read_file_to_object(args.contextfile)
+
+    # Finally, initialize the logger.
+    log_format = '[%(levelname)s] %(asctime)s ' + (context.getAwsRequestId() if context else '~emulambda_request~') + ' %(message)s'
+    logging.basicConfig(format=log_format, datefmt="%Y-%m-%dT%H:%M:%S")
+        
     if args.stream:
         # Enter stream mode
-        emit_to_function(args.verbose, args.eventfile, execute)
+        emit_to_function(args.verbose, args.eventfile, execute, context)
         render_summary(stats) if args.verbose else None
-    elif args.contextfile:
-        context = read_file_to_object(args.contextfile)
-        event = read_file_to_string(args.eventfile)
-        execute(parse_event(event), context)
     else:
         # Single event mode
         event = read_file_to_string(args.eventfile)
-        execute(parse_event(event))
+        execute(parse_event(event), context)
 
 
 def parseargs():
@@ -220,7 +227,7 @@ def invoke_lambda(lfunc, event, context, t, roleARN):
         return "EMULAMBDA: LAMBDA ERROR", -1
 
 
-def emit_to_function(verbose, stream, func):
+def emit_to_function(verbose, stream, func, context=None):
     """
     Emit lines from a stream to a function. Each line must contain a JSON string, and the function must take the resulting object.
     :param stream: A file-like object providing a LDJSON stream.
@@ -236,7 +243,7 @@ def emit_to_function(verbose, stream, func):
                 print(
                     "\nObject %i %s" % (i, line.rstrip()[:65] + ('...' if len(line) > 65 else ''))) if verbose else None
                 i += 1
-                func(json.loads(line), None)
+                func(json.loads(line), context)
     except ValueError as e:
         print("There was a problem parsing your JSON event.")
         print(e.message)
