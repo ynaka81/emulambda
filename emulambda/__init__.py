@@ -2,6 +2,7 @@ from __future__ import print_function
 import argparse
 import gc
 from importlib import import_module
+import imp
 import json
 import os
 import sys
@@ -102,27 +103,30 @@ def parseargs():
 def import_lambda(path):
     """
     Import a function from a given module path and return a reference to it.
-    :param path: Path to function, given as [module 1].[module 2...n].[function]
+    :param path: Path to function, given as [file-name].[function-name]
     :return: Python function
     """
     try:
         # Parse path into module and function name.
         path = str(path)
-        if '/' in path or '\\' in path:
+        if ('/' in path or '\\' in path) and path.count('.') >= 2:
             raise ValueError()
         spath = path.split('.')
         module = '.'.join(spath[:-1])
         function = spath[-1]
         # Import the module and get the function.
-        import_module(module)
-        return getattr(sys.modules[module], function)
+        if '/' in path or '\\' in path:
+            file_name = '{}.py'.format(module)
+            loaded_module = imp.load_source(function, file_name)
+        else:
+            import_module(module)
+            loaded_module = sys.modules[module]
+        return getattr(loaded_module, function)
     except (AttributeError, TypeError) as e:
         print("\nOops! There was a problem finding your function.\n")
         raise e
     except ValueError:
-        print("It looks like you've given a Python *file* path as the lambdapath argument. This must be "
-              "an *import* path, following the form of [module 1].[module 2...n].[function]" + '\n' +
-              "Perhaps it is something like `" + '.'.join(path.split('/')[-1:]) + "`?")
+        print("You must follow the form of [file-name].[function-name].")
         sys.exit(1)
 
 def read_file_to_object(filename):

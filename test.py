@@ -51,6 +51,20 @@ class EmulambdaImportLambdaTest(unittest.TestCase):
         except:
             assert True
 
+    def test_import_lambda_correct_file(self):
+        try:
+            func = emulambda.import_lambda('testmodule/foo.bar')
+            assert func
+        except BaseException as e:
+            self.fail("Unable to import module and find function.\n%s" % e.message)
+
+    def test_import_lambda_wrong_file(self):
+        try:
+            emulambda.import_lambda('testmodule/foo.bar.biz')
+            self.fail("Somehow, we imported a file.")
+        except:
+            assert True
+
     def test_import_lambda_missing(self):
         try:
             emulambda.import_lambda('testmodule.bar')
